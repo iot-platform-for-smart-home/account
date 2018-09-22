@@ -19,13 +19,6 @@
     from tenant_new
     where id = #{id,jdbcType=INTEGER}
   </select>
-  <select id="selectByNameAndPassword" resultMap="BaseResultMap" parameterType="com.edu.bupt.new_account.model.Tenant" >
-    select
-    <include refid="Base_Column_List" />
-    from tenant_new
-    where tenant_name = #{tenantName}
-    and password = #{password}
-  </select>
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from tenant_new
     where id = #{id,jdbcType=INTEGER}
