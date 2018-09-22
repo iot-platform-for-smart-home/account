@@ -57,4 +57,10 @@
     set openid = #{openid,jdbcType=VARCHAR}
     where id = #{id,jdbcType=INTEGER}
   </update>
+  <select id="selectByOpenid" resultMap="BaseResultMap" parameterType="String" >
+    select
+    <include refid="Base_Column_List" />
+    from user_new
+    where openid = #{openid}
+  </select>
 </mapper>

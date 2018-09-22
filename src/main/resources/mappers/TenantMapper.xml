@@ -14,17 +14,18 @@
     id, tenant_name, email, phone, password
   </sql>
   <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
-  select
-  <include refid="Base_Column_List" />
-  from tenant_new
-  where id = #{id,jdbcType=INTEGER}
-</select>
+    select 
+    <include refid="Base_Column_List" />
+    from tenant_new
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+
   <select id="selectByNameAndPassword" resultMap="BaseResultMap" parameterType="com.edu.bupt.new_account.model.Tenant" >
     select
     <include refid="Base_Column_List" />
     from tenant_new
-    where tenant_name = #{tenantName}
-    and password = #{password}
+    where tenant_name=#{tenantName}
+    and password=#{password}
   </select>
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from tenant_new
@@ -36,7 +37,6 @@
     values (#{id,jdbcType=INTEGER}, #{tenantName,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR}, 
       #{phone,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR})
   </insert>
-
   <insert id="insertSelective" parameterType="com.edu.bupt.new_account.model.Tenant" >
     insert into tenant_new
     <trim prefix="(" suffix=")" suffixOverrides="," >
