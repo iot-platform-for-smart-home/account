@@ -8,6 +8,8 @@ import com.edu.bupt.new_account.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -33,6 +35,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findUserByOpenid(String openid) {
         return userMapper.selectByOpenid(openid);
+    }
+
+    @Override
+    public void updateUserInfo(User user) {
+        userMapper.updateByUser(user);
+    }
+
+    @Override
+    public List<User> findAllUser() {
+        return userMapper.searchAllUser();
     }
 
 
