@@ -67,6 +67,7 @@ public class UserController {
 
             userService.saveUser(user);
             result.setResultMsg("create success");
+            result.setData("user");
         } catch (Exception e) {
             System.out.println(e);
             result.setStatus("error");
@@ -91,6 +92,7 @@ public class UserController {
                 return result;
             }
             result.setResultMsg("用户存在");
+            result.setData(user);
 
         } catch (Exception e) {
             System.out.println(e);
