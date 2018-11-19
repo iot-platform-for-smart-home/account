@@ -88,6 +88,14 @@
     from user_new
     where id = #{id,jdbcType=INTEGER}
   </select>
+
+  <select id="selectByPhone" parameterType="String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from user_new
+    where phone = #{phone}
+  </select>
+
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
     delete from user_new
     where id = #{id,jdbcType=INTEGER}

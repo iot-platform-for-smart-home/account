@@ -1,5 +1,6 @@
 package com.edu.bupt.new_account.service;
 
+import com.edu.bupt.new_account.model.Relation;
 import com.edu.bupt.new_account.model.Tenant;
 import com.edu.bupt.new_account.model.User;
 
@@ -16,4 +17,14 @@ public interface UserService {
     void updateUserInfo(User user);
 
     List<User> findAllUser();
+
+    User findUserByphone(String phone);
+
+    void saveRelation(Relation relation);
+
+    List<Relation> getBindedRelations(int bindedId);
+
+    Relation findRelationByBinderAndBinded(int binderId, int bindedId);
+
+    void unbind(Integer id);
 }

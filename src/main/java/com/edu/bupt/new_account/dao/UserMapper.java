@@ -24,4 +24,6 @@ public interface UserMapper {
     void updateByUser(User user);
 
     List<User> searchAllUser();
+
+    User selectByPhone(String phone);
 }
