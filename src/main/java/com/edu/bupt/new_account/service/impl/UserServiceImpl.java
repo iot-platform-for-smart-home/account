@@ -81,4 +81,16 @@ public class UserServiceImpl implements UserService {
     }
 
 
+
+    @Override
+    public User findUserById(Integer binded) {
+        return userMapper.selectByPrimaryKey(binded);
+    }
+
+    @Override
+    public List<Relation> findRelationsByBinderID(int binderId) {
+        return relationMapper.getRelationsByBinderId(binderId);
+    }
+
+
 }

@@ -27,4 +27,9 @@ public interface UserService {
     Relation findRelationByBinderAndBinded(int binderId, int bindedId);
 
     void unbind(Integer id);
+
+
+    User findUserById(Integer binded);
+
+    List<Relation> findRelationsByBinderID(int binderId);
 }

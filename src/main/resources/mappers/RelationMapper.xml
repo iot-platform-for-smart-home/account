@@ -26,6 +26,13 @@
     where binded = #{binded}
   </select>
 
+  <select id="getRelationsByBinderId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from user_relation
+    where binder = #{binder}
+  </select>
+
   <select id="getRelationBy2Bind"  parameterType="com.edu.bupt.new_account.model.Relation" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />

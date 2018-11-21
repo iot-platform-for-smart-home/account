@@ -10,8 +10,7 @@ import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/account")
@@ -122,6 +121,14 @@ public class UserController {
                 result.setResultMsg("被绑定者不存在");
                 return result;
             }
+
+            //检查是否已经有该绑定关系
+            Relation re = userService.findRelationByBinderAndBinded(Integer.parseInt(binder), user.getId());
+            if (re != null) {
+                result.setStatus("error");
+                result.setResultMsg("该绑定关系已存在");
+                return result;
+            }
             Relation relation = new Relation();
             relation.setBinder(Integer.parseInt(binder));
             relation.setBinded(user.getId());
@@ -138,10 +145,44 @@ public class UserController {
         }
     }
 
-    //解绑所属主用户及其网关
-    @RequestMapping(value = "/unBindGate", method = RequestMethod.POST)
+    //获取绑定者对应被绑定者电话及其网关
+    @RequestMapping(value = "/getBinderGates", method = RequestMethod.POST)
     @ResponseBody
-    public Result unBindGate(@RequestBody String Info) {
+    public Result getBinderGates(@RequestBody String Info) {
+        JsonObject info = new JsonParser().parse(Info).getAsJsonObject();
+        Result result = new Result();
+        try {
+            String binder = info.get("customerid").getAsString();
+            int binderId = Integer.parseInt(binder);
+            List<Relation> relations = userService.findRelationsByBinderID(binderId);
+            if (relations == null) {
+                result.setStatus("error");
+                result.setResultMsg("该绑定关系不存在");
+                return result;
+            }
+            List list = new ArrayList();
+            for (Relation relation : relations) {
+                User user = userService.findUserById(relation.getBinded());
+                Map map = new HashMap();
+                map.put("phone", user.getPhone());
+                map.put("gates", relation.getGateid());
+                list.add(map);
+            }
+            result.setData(list);
+        } catch (Exception e) {
+            System.out.println(e);
+            result.setStatus("error");
+            result.setResultMsg("操作失败");
+        } finally {
+            return result;
+        }
+    }
+
+
+    //解绑被绑定者及其网关
+    @RequestMapping(value = "/unBindedGate", method = RequestMethod.POST)
+    @ResponseBody
+    public Result unBindedGate(@RequestBody String Info) {
         JsonObject info = new JsonParser().parse(Info).getAsJsonObject();
         Result result = new Result();
         try {
@@ -169,10 +210,10 @@ public class UserController {
                     judge = 1;
                 }
             }
-            if(judge==1){
-                newGates = newGates.substring(0,newGates.length()-1);
+            if (judge == 1) {
+                newGates = newGates.substring(0, newGates.length() - 1);
             }
-            if(newGates!=""){
+            if (newGates != "") {
                 relation.setBinder(binderId);
                 relation.setBinded(bindedId);
                 relation.setGateid(newGates);
@@ -188,7 +229,63 @@ public class UserController {
         }
     }
 
-    //查询用户所对应的网关
+
+    //解绑绑定者及其网关
+    @RequestMapping(value = "/unBinderGates", method = RequestMethod.POST)
+    @ResponseBody
+    public Result unBinderGates(@RequestBody String Info) {
+        JsonObject info = new JsonParser().parse(Info).getAsJsonObject();
+        Result result = new Result();
+        try {
+            String binder = info.get("customerid").getAsString();
+            String gateid = info.get("gateids").getAsString();
+            List<Relation> relations = userService.findRelationsByBinderID(Integer.parseInt(binder));
+            if (relations == null) {
+                result.setStatus("error");
+                result.setResultMsg("不存在该绑定关系");
+                return result;
+            }
+
+            for (Relation re : relations) {
+                String gates = re.getGateid();
+                if (gates.indexOf(gateid) != -1) {
+                    //删除绑定关系
+                    userService.unbind(re.getId());
+                    String[] originGates = re.getGateid().split(",");
+                    String newGates = "";
+                    int judge = 0;
+                    for (String i : originGates) {
+                        if (!i.equals(gateid)) {
+                            newGates += i + ',';
+                            judge = 1;
+                        }
+                    }
+                    if (judge == 1) {
+                        newGates = newGates.substring(0, newGates.length() - 1);
+                    }
+                    Relation relation = new Relation();
+                    if (newGates != "") {
+                        relation.setBinder(re.getBinder());
+                        relation.setBinded(re.getBinded());
+                        relation.setGateid(newGates);
+                        userService.saveRelation(relation);
+                    }
+                    break;
+                }
+            }
+
+
+        } catch (Exception e) {
+            System.out.println(e);
+            result.setStatus("error");
+            result.setResultMsg("解除失败");
+        } finally {
+            result.setResultMsg("解除成功");
+            return result;
+        }
+    }
+
+    //查询被绑定用户所对应的网关
     @RequestMapping(value = "/getGates", method = RequestMethod.POST)
     @ResponseBody
     public Result getGates(@RequestBody String loginInfo) {

@@ -22,4 +22,6 @@ public interface RelationMapper {
     List<Relation> getBindedRelations(int bindedId);
 
     Relation getRelationBy2Bind(Relation re);
+
+    List<Relation> getRelationsByBinderId(int binderId);
 }
