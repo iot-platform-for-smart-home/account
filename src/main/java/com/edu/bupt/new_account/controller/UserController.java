@@ -112,7 +112,7 @@ public class UserController {
         JsonObject info = new JsonParser().parse(Info).getAsJsonObject();
         Result result = new Result();
         try {
-            String binder = info.get("customerid").getAsString();
+            String binded = info.get("customerid").getAsString();
             String phone = info.get("phone").getAsString();
             String gateids = info.get("gateids").getAsString();
             User user = userService.findUserByphone(phone);
@@ -123,15 +123,24 @@ public class UserController {
             }
 
             //检查是否已经有该绑定关系
-            Relation re = userService.findRelationByBinderAndBinded(Integer.parseInt(binder), user.getId());
+            Relation re = userService.findRelationByBinderAndBinded(user.getId(), Integer.parseInt(binded));
             if (re != null) {
-                result.setStatus("error");
-                result.setResultMsg("该绑定关系已存在");
+                String gatesStr = re.getGateid();
+                String gates[] = gateids.split(",");
+                for (String gate : gates) {
+                    if (gatesStr.indexOf(gate) == -1) {
+                        gatesStr +=','+gate;
+                    }
+                }
+                int id = re.getId();
+                re.setGateid(gatesStr);
+                userService.updateRelation(re);
+
                 return result;
             }
             Relation relation = new Relation();
-            relation.setBinder(Integer.parseInt(binder));
-            relation.setBinded(user.getId());
+            relation.setBinded(Integer.parseInt(binded));
+            relation.setBinder(user.getId());
             relation.setGateid(gateids);
             userService.saveRelation(relation);
 
@@ -140,7 +149,6 @@ public class UserController {
             result.setStatus("error");
             result.setResultMsg("插入失败");
         } finally {
-            result.setResultMsg("绑定成功");
             return result;
         }
     }
@@ -155,18 +163,14 @@ public class UserController {
             String binder = info.get("customerid").getAsString();
             int binderId = Integer.parseInt(binder);
             List<Relation> relations = userService.findRelationsByBinderID(binderId);
-            if (relations == null) {
+            if (relations.size() == 0) {
                 result.setStatus("error");
                 result.setResultMsg("该绑定关系不存在");
                 return result;
             }
             List list = new ArrayList();
             for (Relation relation : relations) {
-                User user = userService.findUserById(relation.getBinded());
-                Map map = new HashMap();
-                map.put("phone", user.getPhone());
-                map.put("gates", relation.getGateid());
-                list.add(map);
+                list.add(relation.getGateid());
             }
             result.setData(list);
         } catch (Exception e) {
@@ -186,12 +190,12 @@ public class UserController {
         JsonObject info = new JsonParser().parse(Info).getAsJsonObject();
         Result result = new Result();
         try {
-            String binder = info.get("customerid").getAsString();
+            String binded = info.get("customerid").getAsString();
             String phone = info.get("phone").getAsString();
             String gateids = info.get("gateids").getAsString();
             User user = userService.findUserByphone(phone);
-            int binderId = Integer.parseInt(binder);
-            int bindedId = user.getId();
+            int bindedId = Integer.parseInt(binded);
+            int binderId = user.getId();
             Relation relation = userService.findRelationByBinderAndBinded(binderId, bindedId);
             if (relation == null) {
                 result.setStatus("error");
@@ -224,11 +228,64 @@ public class UserController {
             result.setStatus("error");
             result.setResultMsg("解除失败");
         } finally {
-            result.setResultMsg("解除成功");
             return result;
         }
     }
 
+
+    //解绑被绑定者及其网关 只有一个网关id
+    @RequestMapping(value = "/unBindedALLGate", method = RequestMethod.POST)
+    @ResponseBody
+    public Result unBindedALLGate(@RequestBody String Info) {
+        JsonObject info = new JsonParser().parse(Info).getAsJsonObject();
+        Result result = new Result();
+        try {
+            String binded = info.get("customerid").getAsString();
+            String gateid = info.get("gateid").getAsString();
+            int bindedId = Integer.parseInt(binded);
+            List<Relation> relations = userService.getBindedRelations(bindedId);
+
+            if (relations == null) {
+                result.setStatus("error");
+                result.setResultMsg("不存在该绑定关系");
+                return result;
+            }
+
+            for(Relation re:relations){
+                //删除绑定关系
+                String re_gates = re.getGateid();
+                if(re_gates.indexOf(gateid)==-1){
+                    continue;
+                }
+
+                String[] originGates = re.getGateid().split(",");
+                String newGates = "";
+                int judge = 0;
+                for (String i : originGates) {
+                    if (!Arrays.asList(gateid).contains(i)) {
+                        newGates += i + ',';
+                        judge = 1;
+                    }
+                }
+                if (judge == 1) {
+                    newGates = newGates.substring(0, newGates.length() - 1);
+                }
+                if (newGates == "") {
+                    userService.unbind(re.getId());
+                }else {
+                    re.setGateid(newGates);
+                    userService.updateRelation(re);
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println(e);
+            result.setStatus("error");
+            result.setResultMsg("解除失败");
+        } finally {
+            return result;
+        }
+    }
 
     //解绑绑定者及其网关
     @RequestMapping(value = "/unBinderGates", method = RequestMethod.POST)
@@ -240,7 +297,7 @@ public class UserController {
             String binder = info.get("customerid").getAsString();
             String gateid = info.get("gateids").getAsString();
             List<Relation> relations = userService.findRelationsByBinderID(Integer.parseInt(binder));
-            if (relations == null) {
+            if (relations.size() == 0) {
                 result.setStatus("error");
                 result.setResultMsg("不存在该绑定关系");
                 return result;
@@ -300,11 +357,17 @@ public class UserController {
                 result.setResultMsg("未找到绑定网关");
                 return result;
             }
-            String ret = "";
+            List list = new ArrayList();
+
             for (Relation relation : relations) {
-                ret += relation.getGateid() + ',';
+                User user = userService.findUserById(relation.getBinder());
+                Map map = new HashMap();
+                map.put("phone", user.getPhone());
+                map.put("gates", relation.getGateid());
+                list.add(map);
             }
-            result.setData(ret);
+            result.setData(list);
+
         } catch (Exception e) {
             System.out.println(e);
             result.setStatus("error");

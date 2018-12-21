@@ -32,4 +32,6 @@ public interface UserService {
     User findUserById(Integer binded);
 
     List<Relation> findRelationsByBinderID(int binderId);
+
+    void updateRelation(Relation re);
 }

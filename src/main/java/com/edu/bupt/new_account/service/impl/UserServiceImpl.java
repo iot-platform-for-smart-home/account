@@ -92,5 +92,10 @@ public class UserServiceImpl implements UserService {
         return relationMapper.getRelationsByBinderId(binderId);
     }
 
+    @Override
+    public void updateRelation(Relation re) {
+        relationMapper.updateByPrimaryKey(re);
+    }
+
 
 }
