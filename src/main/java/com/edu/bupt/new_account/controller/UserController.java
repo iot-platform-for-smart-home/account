@@ -115,6 +115,7 @@ public class UserController {
             String binded = info.get("customerid").getAsString();
             String phone = info.get("phone").getAsString();
             String gateids = info.get("gateids").getAsString();
+            String remark = info.get("remark").getAsString();
             User user = userService.findUserByphone(phone);
             if (user == null) {
                 result.setStatus("error");
@@ -125,25 +126,17 @@ public class UserController {
             //检查是否已经有该绑定关系
             Relation re = userService.findRelationByBinderAndBinded(user.getId(), Integer.parseInt(binded));
             if (re != null) {
-                String gatesStr = re.getGateid();
-                String gates[] = gateids.split(",");
-                for (String gate : gates) {
-                    if (gatesStr.indexOf(gate) == -1) {
-                        gatesStr +=','+gate;
-                    }
-                }
-                int id = re.getId();
-                re.setGateid(gatesStr);
-                userService.updateRelation(re);
-
+                result.setStatus("error");
+                result.setResultMsg("该绑定关系已存在");
                 return result;
             }
             Relation relation = new Relation();
             relation.setBinded(Integer.parseInt(binded));
             relation.setBinder(user.getId());
             relation.setGateid(gateids);
+            relation.setRemark(remark);
             userService.saveRelation(relation);
-
+            result.setResultMsg("绑定成功");
         } catch (Exception e) {
             System.out.println(e);
             result.setStatus("error");
@@ -163,14 +156,18 @@ public class UserController {
             String binder = info.get("customerid").getAsString();
             int binderId = Integer.parseInt(binder);
             List<Relation> relations = userService.findRelationsByBinderID(binderId);
-            if (relations.size() == 0) {
+            if (relations == null) {
                 result.setStatus("error");
                 result.setResultMsg("该绑定关系不存在");
                 return result;
             }
             List list = new ArrayList();
             for (Relation relation : relations) {
-                list.add(relation.getGateid());
+                User user = userService.findUserById(relation.getBinded());
+                Map map = new HashMap();
+                map.put("phone", user.getPhone());
+                map.put("gates", relation.getGateid());
+                list.add(map);
             }
             result.setData(list);
         } catch (Exception e) {
@@ -287,6 +284,7 @@ public class UserController {
         }
     }
 
+
     //解绑绑定者及其网关
     @RequestMapping(value = "/unBinderGates", method = RequestMethod.POST)
     @ResponseBody
@@ -364,6 +362,7 @@ public class UserController {
                 Map map = new HashMap();
                 map.put("phone", user.getPhone());
                 map.put("gates", relation.getGateid());
+                map.put("remark",relation.getRemark());
                 list.add(map);
             }
             result.setData(list);

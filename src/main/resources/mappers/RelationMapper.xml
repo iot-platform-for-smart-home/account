@@ -7,10 +7,12 @@
       <arg column="binder" javaType="java.lang.Integer" jdbcType="INTEGER" />
       <arg column="binded" javaType="java.lang.Integer" jdbcType="INTEGER" />
       <arg column="gateid" javaType="java.lang.String" jdbcType="VARCHAR" />
+      <arg column="remark" javaType="java.lang.String" jdbcType="VARCHAR" />
     </constructor>
   </resultMap>
+
   <sql id="Base_Column_List">
-    id, binder, binded, gateid
+    id, binder, binded, gateid, remark
   </sql>
   <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
     select 
@@ -47,9 +49,9 @@
   </delete>
   <insert id="insert" parameterType="com.edu.bupt.new_account.model.Relation">
     insert into user_relation (id, binder, binded, 
-      gateid)
+      gateid, remark)
     values (#{id,jdbcType=INTEGER}, #{binder,jdbcType=INTEGER}, #{binded,jdbcType=INTEGER}, 
-      #{gateid,jdbcType=VARCHAR})
+      #{gateid,jdbcType=VARCHAR}, #{remark, jdbcType=VARCHAR})
   </insert>
   <update id="updateByPrimaryKeySelective" parameterType="com.edu.bupt.new_account.model.Relation">
     update user_relation
@@ -62,6 +64,9 @@
       </if>
       <if test="gateid != null">
         gateid = #{gateid,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        remark = #{remark,jdbcType = VARCHAR}
       </if>
     </set>
     where id = #{id,jdbcType=INTEGER}
@@ -82,6 +87,9 @@
       <if test="gateid != null">
         gateid,
       </if>
+      <if test="remark != null">
+        remark
+      </if>
     </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
       <if test="id != null">
@@ -94,7 +102,10 @@
         #{binded,jdbcType=INTEGER},
       </if>
       <if test="gateid != null">
-        #{gateid,jdbcType=INTEGER},
+        #{gateid,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR}
       </if>
     </trim>
   </insert>
@@ -102,7 +113,8 @@
     update user_relation
     set binder = #{binder,jdbcType=INTEGER},
       binded = #{binded,jdbcType=INTEGER},
-      gateid = #{gateid,jdbcType=INTEGER}
+      gateid = #{gateid,jdbcType=VARCHAR},
+      remark = #{remark,jdbcType=VARCHAR}
     where id = #{id,jdbcType=INTEGER}
   </update>
 </mapper>

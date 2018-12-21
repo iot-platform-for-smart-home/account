@@ -9,11 +9,22 @@ public class Relation {
 
     private String gateid;
 
-    public Relation(Integer id, Integer binder, Integer binded, String gateid) {
+    private String remark;
+
+    public Relation(Integer id, Integer binder, Integer binded, String gateid, String remark) {
         this.id = id;
         this.binder = binder;
         this.binded = binded;
         this.gateid = gateid;
+        this.remark = remark;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 
     public Relation() {
