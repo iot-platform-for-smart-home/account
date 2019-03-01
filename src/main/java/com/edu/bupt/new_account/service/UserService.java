@@ -10,7 +10,7 @@ public interface UserService {
 
     Tenant findTenantByNameAndPasswd(String tenantName, String passwd);
 
-    void saveUser(User user);
+    Integer saveUser(User user);
 
     User findUserByOpenid(String openid);
 
@@ -34,4 +34,8 @@ public interface UserService {
     List<Relation> findRelationsByBinderID(int binderId);
 
     void updateRelation(Relation re);
+
+    void deleteUserById(Integer id);
+
+    Boolean is_shared(String old_gatewayids, String new_gatewayids);
 }

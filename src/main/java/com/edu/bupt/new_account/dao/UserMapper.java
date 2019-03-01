@@ -26,4 +26,6 @@ public interface UserMapper {
     List<User> searchAllUser();
 
     User selectByPhone(String phone);
+
+    void deleteById(Integer id);
 }

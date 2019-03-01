@@ -50,11 +50,11 @@ public class UserController {
     public Result createUser(@RequestBody String info) {
         JsonObject jsonInfo = new JsonParser().parse(info).getAsJsonObject();
         Result result = new Result();
+        String openid = jsonInfo.get("openid").getAsString();
+        String email = jsonInfo.get("email").getAsString();
+        String phone = jsonInfo.get("phone").getAsString();
+        String address = jsonInfo.get("address").getAsString();
         try {
-            String openid = jsonInfo.get("openid").getAsString();
-            String email = jsonInfo.get("email").getAsString();
-            String phone = jsonInfo.get("phone").getAsString();
-            String address = jsonInfo.get("address").getAsString();
             User u = userService.findUserByOpenid(openid);
             if (u != null) {
                 result.setStatus("error");
@@ -68,16 +68,19 @@ public class UserController {
             user.setAddress(address);
 
             userService.saveUser(user);
+            int customerid = userService.findUserByOpenid(openid).getId();
+            user.setId(customerid);
             result.setResultMsg("create success");
-            result.setData("user");
+            result.setData(user);
         } catch (Exception e) {
+            userService.deleteUserById(userService.findUserByOpenid(openid).getId());
             System.out.println(e);
             result.setStatus("error");
-
         } finally {
             return result;
         }
     }
+
 
     //判断openid是否在表内
     @RequestMapping(value = "/userLogin", method = RequestMethod.POST)
@@ -105,7 +108,8 @@ public class UserController {
         }
     }
 
-    //绑定所属主用户及其网关
+
+    //绑定所属主用户及其网关   A 分享给 B
     @RequestMapping(value = "/bindGate", method = RequestMethod.POST)
     @ResponseBody
     public Result bindGate(@RequestBody String Info) {
@@ -119,34 +123,43 @@ public class UserController {
             User user = userService.findUserByphone(phone);
             if (user == null) {
                 result.setStatus("error");
-                result.setResultMsg("被绑定者不存在");
+                result.setResultMsg("该用户不存在");
                 return result;
             }
 
             //检查是否已经有该绑定关系
             Relation re = userService.findRelationByBinderAndBinded(user.getId(), Integer.parseInt(binded));
             if (re != null) {
-                result.setStatus("error");
-                result.setResultMsg("该绑定关系已存在");
-                return result;
+                if (userService.is_shared(re.getGateid(), gateids)){
+                    result.setStatus("error");
+                    result.setResultMsg("网关重复分享");
+                    return result;
+                } else {  // 添加新分享的网关
+                    String old_gatewayids = re.getGateid();
+                    re.setGateid(old_gatewayids + "," + gateids);
+                    userService.updateRelation(re);
+                    result.setResultMsg("绑定成功");
+                }
+            } else {
+                Relation relation = new Relation();
+                relation.setBinded(Integer.parseInt(binded));
+                relation.setBinder(user.getId());
+                relation.setGateid(gateids);
+                relation.setRemark(remark);
+                userService.saveRelation(relation);
+                result.setResultMsg("绑定成功");
             }
-            Relation relation = new Relation();
-            relation.setBinded(Integer.parseInt(binded));
-            relation.setBinder(user.getId());
-            relation.setGateid(gateids);
-            relation.setRemark(remark);
-            userService.saveRelation(relation);
-            result.setResultMsg("绑定成功");
         } catch (Exception e) {
-            System.out.println(e);
             result.setStatus("error");
             result.setResultMsg("插入失败");
+            e.printStackTrace();
         } finally {
             return result;
         }
     }
 
-    //获取绑定者对应被绑定者电话及其网关
+
+    //获取绑定者对应被绑定者电话及其网关  A分享给B， B要获取A信息
     @RequestMapping(value = "/getBinderGates", method = RequestMethod.POST)
     @ResponseBody
     public Result getBinderGates(@RequestBody String Info) {
@@ -155,19 +168,16 @@ public class UserController {
         try {
             String binder = info.get("customerid").getAsString();
             int binderId = Integer.parseInt(binder);
+            // 查找是否存在别人分享的网关
             List<Relation> relations = userService.findRelationsByBinderID(binderId);
-            if (relations == null) {
+            if (relations.size() == 0) {
                 result.setStatus("error");
                 result.setResultMsg("该绑定关系不存在");
                 return result;
             }
             List list = new ArrayList();
             for (Relation relation : relations) {
-                User user = userService.findUserById(relation.getBinded());
-                Map map = new HashMap();
-                map.put("phone", user.getPhone());
-                map.put("gates", relation.getGateid());
-                list.add(map);
+                list.add(relation.getGateid());
             }
             result.setData(list);
         } catch (Exception e) {
@@ -180,7 +190,7 @@ public class UserController {
     }
 
 
-    //解绑被绑定者及其网关
+    //解绑被绑定者及其网关  A 分享给 B， A 要取消对 B 的分享
     @RequestMapping(value = "/unBindedGate", method = RequestMethod.POST)
     @ResponseBody
     public Result unBindedGate(@RequestBody String Info) {
@@ -230,7 +240,7 @@ public class UserController {
     }
 
 
-    //解绑被绑定者及其网关 只有一个网关id
+    //解绑被绑定者及其网关 只有一个网关id  网关拥有者取消所有分享
     @RequestMapping(value = "/unBindedALLGate", method = RequestMethod.POST)
     @ResponseBody
     public Result unBindedALLGate(@RequestBody String Info) {
@@ -242,7 +252,7 @@ public class UserController {
             int bindedId = Integer.parseInt(binded);
             List<Relation> relations = userService.getBindedRelations(bindedId);
 
-            if (relations == null) {
+            if (relations.size() == 0) {
                 result.setStatus("error");
                 result.setResultMsg("不存在该绑定关系");
                 return result;
@@ -340,6 +350,7 @@ public class UserController {
         }
     }
 
+
     //查询被绑定用户所对应的网关
     @RequestMapping(value = "/getGates", method = RequestMethod.POST)
     @ResponseBody
@@ -350,7 +361,7 @@ public class UserController {
             String binded = info.get("customerid").getAsString();
             int bindedId = Integer.parseInt(binded);
             List<Relation> relations = userService.getBindedRelations(bindedId);
-            if (relations == null) {
+            if (relations.size() == 0) {
                 result.setStatus("error");
                 result.setResultMsg("未找到绑定网关");
                 return result;
@@ -404,6 +415,7 @@ public class UserController {
             return result;
         }
     }
+
 
     // 搜索所有用户
     @RequestMapping(value = "/searchAllUser", method = RequestMethod.POST)

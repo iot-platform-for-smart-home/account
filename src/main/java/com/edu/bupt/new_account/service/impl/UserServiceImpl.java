@@ -33,8 +33,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void saveUser(User user) {
-        userMapper.insert(user);
+    public Integer saveUser(User user) {
+        return userMapper.insert(user);
     }
 
     @Override
@@ -95,6 +95,20 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateRelation(Relation re) {
         relationMapper.updateByPrimaryKey(re);
+    }
+
+    public void deleteUserById(Integer id){
+        userMapper.deleteById(id);
+    }
+
+    public Boolean is_shared(String old_gatewayids, String new_gatewayids){
+        String [] gatewayids = new_gatewayids.split(",");
+        for (String gatewayid: gatewayids){
+            if (old_gatewayids.contains(gatewayid)){
+                return true;
+            }
+        }
+        return false;
     }
 
 

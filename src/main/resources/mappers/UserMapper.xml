@@ -13,9 +13,8 @@
   <sql id="Base_Column_List">
     id, openid, email, phone, address
   </sql>
-  <insert id="insert" parameterType="com.edu.bupt.new_account.model.User">
-    insert into user_new (id, openid, email, 
-      phone, address)
+  <insert id="insert" parameterType="com.edu.bupt.new_account.model.User" keyProperty="id" useGeneratedKeys="true">
+    insert into user_new (id, openid, email, phone, address)
     values (#{id,jdbcType=INTEGER}, #{openid,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR}, 
       #{phone,jdbcType=VARCHAR}, #{address,jdbcType=VARCHAR})
   </insert>
@@ -127,5 +126,8 @@
     <include refid="Base_Column_List" />
     from user_new
   </select>
+  <delete id="deleteById">
+    DELETE FROM user_new WHERE id=#{id, jdbcType=INTEGER}
+  </delete>
 
 </mapper>
